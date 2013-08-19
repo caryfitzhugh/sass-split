@@ -703,5 +703,102 @@ END
         handle_load_error(err)
       end
     end
+    class SassSplit < Generic
+      # @param args [Array<String>] The command-line arguments
+      def initialize(args)
+        super
+        require 'sass'
+        @options[:for_tree] = {}
+        @options[:extract]  = :static
+        @options[:for_engine] = {:cache => false, :read_cache => true}
+      end
+
+      # Tells optparse how to parse the arguments.
+      #
+      # @param opts [OptionParser]
+      def set_opts(opts)
+        opts.banner = <<END
+Usage: sass-split [options] [INPUT] [OUTPUT]
+
+Description:
+  Splits a Sass/SCSS file into a dynamic and static file.
+
+Options:
+END
+
+        opts.on('-d', '--dynamic',
+          "Extract the dynamic code to output") do |dyn|
+            @options[:extract] = :dynamic
+        end
+
+
+        super(opts)
+      end
+
+      # Processes the options set by the command-line arguments,
+      # and runs the CSS compiler appropriately.
+      def process_result
+        require 'sass'
+
+        super
+        input = @options[:input]
+        output = @options[:output]
+        process_file(input, output)
+      end
+
+      private
+
+
+      def process_file(input, output)
+        if input.is_a?(File)
+          @options[:from] ||=
+            case input.path
+            when /\.scss$/; :scss
+            when /\.sass$/; :sass
+            end
+        end
+
+        if output.is_a?(File)
+          @options[:to] ||=
+            case output.path
+            when /\.scss$/; :scss
+            when /\.sass$/; :sass
+            end
+        end
+
+        @options[:from] ||= :scss
+        @options[:to] ||= :scss
+        @options[:for_engine][:syntax] = @options[:from]
+
+        output_tree =
+          ::Sass::Util.silence_sass_warnings do
+            if input.is_a?(File)
+              ::Sass::Engine.for_file(input.path, @options[:for_engine])
+            else
+              ::Sass::Engine.new(input.read, @options[:for_engine])
+            end.to_tree
+          end
+
+        require 'sass/tree/visitors/splitter' # Put in engine.rb
+
+        # We want SCSS
+        out = ::Sass::Tree::Visitors::Splitter.visit(output_tree, @options[:extract]).to_scss
+        output = input.path if @options[:in_place]
+        write_output(out, output)
+      rescue ::Sass::SyntaxError => e
+        raise e if @options[:trace]
+        file = " of #{e.sass_filename}" if e.sass_filename
+        raise "Error on line #{e.sass_line}#{file}: #{e.message}\n  Use --trace for backtrace"
+      rescue LoadError => err
+        handle_load_error(err)
+      end
+      private
+
+      def has_variables?(*inputs)
+        [inputs].flatten.select do |n|
+          n.is_a?(::Sass::Script::Node)
+        end.size > 0
+      end
+    end
   end
 end

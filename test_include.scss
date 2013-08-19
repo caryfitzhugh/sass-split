@@ -1,0 +1,10 @@
+$var2: orange;
+
+.dynamic {
+  .included {
+    @if ($var2 == "orange") {
+      color: orange;
+    }
+    background: white;
+  }
+}

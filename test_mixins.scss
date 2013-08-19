@@ -1,0 +1,10 @@
+$orange: #123456;
+
+@mixin ugly {
+  color: red;
+  background: purple;
+}
+
+@mixin dyn_ugly {
+  color: $orange;
+}

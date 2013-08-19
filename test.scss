@@ -1,0 +1,33 @@
+$blue: #0000FF;
+$var1: color;
+$red:  #FF0000;
+
+@import "test_include";
+@import "test_mixins";
+
+// Comment!
+.apple {
+  .static {
+    color: blue;
+  }
+  .dynamic {
+    color: $blue;
+  }
+  .ugly {
+    // Includes UGLY here
+    @include ugly;
+    // Includes dynamic ugly here
+    @include dyn_ugly;
+  }
+}
+
+// Extend example
+.better-apple {
+  @extend .apple;
+  .static {
+    color: red;
+  }
+  .dynamic {
+    color: $red;
+  }
+}
