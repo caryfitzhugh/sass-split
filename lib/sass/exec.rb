@@ -710,7 +710,7 @@ END
         require 'sass'
         @options[:for_tree] = {}
         @options[:extract]  = :static
-        @options[:for_engine] = {:cache => false, :read_cache => true}
+        @options[:for_engine] = {:cache => false, :read_cache => true, :load_paths => []}
       end
 
       # Tells optparse how to parse the arguments.
@@ -788,6 +788,8 @@ END
             end.to_tree
           end
 
+        require 'pp'
+        require 'pry'
         require 'sass/tree/visitors/splitter' # Put in engine.rb
 
         # We want SCSS

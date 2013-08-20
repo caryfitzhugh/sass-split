@@ -1,6 +1,7 @@
 $blue: #0000FF;
 $var1: color;
 $red:  #FF0000;
+$width: 45;
 
 @import "test_include";
 @import "test_mixins";
@@ -9,9 +10,12 @@ $red:  #FF0000;
 .apple {
   .static {
     color: blue;
+    @include params(44);
   }
   .dynamic {
     color: $blue;
+    width: $width - 10;
+    @include params($width)
   }
   .ugly {
     // Includes UGLY here
@@ -29,5 +33,6 @@ $red:  #FF0000;
   }
   .dynamic {
     color: $red;
+    border: 1px solid $red;
   }
 }

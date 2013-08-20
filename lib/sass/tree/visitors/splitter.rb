@@ -23,7 +23,8 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
   end
 
   def visit_comment(node)
-    node
+    # We don't want no comments here!
+    []
   end
 
   def visit_prop(node)
@@ -35,10 +36,17 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
   end
 
   def visit_rule(node)
-    if (should_include?(node.rule))
-      super(node)
+    rule_node = if (should_include?(node.rule))
+        super(node)
+      else
+        yield
+      end
+
+    # If it's empty, just drop it!
+    if rule_node.children.size == 0
+      []
     else
-      yield
+      rule_node
     end
   end
 
@@ -54,15 +62,25 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
 
   def visit_import(node)
     result = super(node)
-    result.imported_file.to_tree
+    visit( result.imported_file.to_tree )
   end
 
   def visit_mixin(node)
-    # all the vars and things will be worked out in what the mixin contains
-    res = super(node)
-    # It returns us a trace-node always.  And we'd like to avoid putting
-    # out bad SCSS with {} {} and such.
-    res.children
+    binding.pry
+    mixin = @environment.mixin(node.name)
+    arguments = [node.args + node.keywords.values].flatten
+    contains_dynamic_arguments = has_dynamic_data?(arguments)
+
+    if (@ouput == :dynamic && contains_dynamic_arguments)
+      # Copy out with the variables replaced with the included nodes
+
+    elsif (@output == :static && !contains_dynamic_arguments)
+      # Copy out with everything resolved.
+
+    else
+      []
+    end
+    end
   end
 
   def visit_variable(node)
@@ -71,10 +89,28 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
 
   def should_include?(*node_data)
     node_data = [node_data].flatten.compact
-    # if it has things which aren't a string.
-    has_dynamic = node_data.select {|t| t.is_a?(::Sass::Script::Variable)}.size > 0
 
+    # if it has things which aren't a string.
+    has_dynamic = has_dynamic_data?(node_data)
     include_it = (@output == :dynamic) ? has_dynamic : !has_dynamic
     include_it
+  end
+
+  def has_dynamic_data?(*node_data)
+    node_data = [node_data].flatten.compact
+
+    node_data.select do |t|
+      if t.is_a?(::Sass::Script::Variable)
+        true
+
+      elsif t.is_a?(::Sass::Script::Operation)
+        # If it's an operation, look inside and see if it's got dynamic data in there...
+        has_dynamic_data?(t.children)
+
+      elsif t.is_a?(::Sass::Script::List)
+        # If it's a list, we need to examine it a bit closer...
+        has_dynamic_data?(t.value)
+      end
+    end.size > 0
   end
 end
