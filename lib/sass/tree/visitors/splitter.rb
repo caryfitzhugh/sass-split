@@ -80,7 +80,6 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
     else
       []
     end
-    end
   end
 
   def visit_variable(node)
