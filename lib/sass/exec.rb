@@ -731,6 +731,15 @@ END
             @options[:extract] = :dynamic
         end
 
+        opts.on('-I', '--load-path PATH', 'Add a sass import path.') do |path|
+          @options[:for_engine][:load_paths] << path
+        end
+        opts.on('-r', '--require LIB', 'Require a Ruby library before running Sass.') do |lib|
+          require lib
+        end
+        opts.on('--cache-location PATH', 'The path to put cached Sass files. Defaults to .sass-cache.') do |loc|
+          @options[:for_engine][:cache_location] = loc
+        end
 
         super(opts)
       end
