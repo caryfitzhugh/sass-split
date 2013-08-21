@@ -6,7 +6,7 @@ $orange: #123456;
 }
 
 @mixin dyn_ugly {
-  color: $orange;
+  color: #123456;
 }
 @mixin params($top) {
   background-color: $top;

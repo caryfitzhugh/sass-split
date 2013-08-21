@@ -811,6 +811,7 @@ END
           n.is_a?(::Sass::Script::Node)
         end.size > 0
       end
+
     end
   end
 end

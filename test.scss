@@ -13,6 +13,8 @@ $width: 45;
     @include params(44);
   }
   .params-dynamic {
+    background: lighten($blue);
+    opacity: lighten(44);
     color: $blue;
     width: $width - 10;
     .params-dynamic-inside {

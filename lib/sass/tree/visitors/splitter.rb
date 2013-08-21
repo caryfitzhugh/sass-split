@@ -113,14 +113,19 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
         # What that does is do the standard resolution between the variables and the mixin, etc.
         # We want to 'export' back to scss the value as the resolved value
         # So we need to copy the 'resolved' values to the 'values'.
-        #
-        # For all the children, replace the value with resolved_value
-        children = output.children.map do |child|
-          child.name = [child.resolved_name]
 
-          child.value= ::Sass::Script::String.new(child.resolved_value)
-          child
-        end
+        # For all the children, replace the value with resolved_value
+        children = expand_all_children_etc(output.children).map do |child|
+          pp child, child.class
+            if child.respond_to?(:resolved_name)
+              child.name = [child.resolved_name]
+            end
+
+            if child.respond_to?(:resolved_value)
+              child.value= ::Sass::Script::String.new(child.resolved_value)
+            end
+            child
+          end.flatten
 
         children
       else
@@ -157,7 +162,7 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
                 (the_node.respond_to?(:tree)     && the_node.tree) ||
                 []
      child_data = child_nodes.flatten.compact.map  do |child|
-         recursive_has_dynamic_data?(child)
+         recursive_get_dynamic_data(child)
        end
 
       descendant_data = (nodes_data + child_data)
@@ -176,13 +181,16 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
         # If it's an operation, look inside and see if it's got dynamic data in there...
         get_dynamic_data(t.children)
 
+      elsif t.is_a?(::Sass::Script::Funcall)
+         get_dynamic_data(t.children)
+
       elsif t.is_a?(::Sass::Script::List)
         # If it's a list, we need to examine it a bit closer...
         get_dynamic_data(t.value)
       else
         nil
       end
-    end.compact
+    end.flatten.compact
   end
 
   def has_dynamic_data?(*node_data)
@@ -195,6 +203,20 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
     res =  block.call
     @output = saved
     res
+  end
+
+  def expand_all_children_etc(child)
+    children = if child.respond_to?(:children)
+        child.children
+      elsif child.respond_to?(:tree)
+        child.tree
+      else
+        [child]
+      end
+
+    children.flatten.map do |child_child|
+      expand_all_children_etc(child_child)
+    end.flatten
   end
 
   def map_mixin_args(callable, args, keywords, splat)
