@@ -12,10 +12,15 @@ $width: 45;
     color: blue;
     @include params(44);
   }
-  .dynamic {
+  .params-dynamic {
     color: $blue;
     width: $width - 10;
-    @include params($width)
+    .params-dynamic-inside {
+      @include params($width)
+    }
+    .not-seen-yet {
+      @include params($not_seen_yet);
+    }
   }
   .ugly {
     // Includes UGLY here

@@ -794,6 +794,7 @@ END
 
         # We want SCSS
         out = ::Sass::Tree::Visitors::Splitter.visit(output_tree, @options[:extract]).to_scss
+
         output = input.path if @options[:in_place]
         write_output(out, output)
       rescue ::Sass::SyntaxError => e
