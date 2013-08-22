@@ -5,17 +5,13 @@ require 'rubygems'
 # However, a build server automatically packages the master branch
 # every time it's pushed to; this is made available as a prerelease gem.
 SASS_GEMSPEC = Gem::Specification.new do |spec|
-  spec.rubyforge_project = 'sass'
-  spec.name = 'sass'
-  spec.summary = "A powerful but elegant CSS compiler that makes CSS fun again."
+  spec.rubyforge_project = 'sass-split'
+  spec.name = 'sass-split'
+  spec.summary = "A powerful but elegant sass splitter gem"
   spec.version = File.read(File.dirname(__FILE__) + '/VERSION').strip
-  spec.authors = ['Nathan Weizenbaum', 'Chris Eppstein', 'Hampton Catlin']
-  spec.email = 'sass-lang@googlegroups.com'
+  spec.authors = ['Cary Fitzhugh/Ziplist', 'Nathan Weizenbaum', 'Chris Eppstein', 'Hampton Catlin']
   spec.description = <<-END
-      Sass makes CSS fun again. Sass is an extension of CSS3, adding
-      nested rules, variables, mixins, selector inheritance, and more.
-      It's translated to well-formatted, standard CSS using the
-      command line tool or a web-framework plugin.
+      This is really sass-split.  Just processes sass, splits it into dynamic and static files.
     END
 
   spec.required_ruby_version = '>= 1.8.7'
@@ -23,11 +19,10 @@ SASS_GEMSPEC = Gem::Specification.new do |spec|
   spec.add_development_dependency 'maruku', '>= 0.5.9'
 
   readmes = Dir['*'].reject{ |x| x =~ /(^|[^.a-z])[a-z]+/ || x == "TODO" }
-  spec.executables = ['sass', 'sass-convert', 'scss', 'sass-split']
+  spec.executables = ['sass-split']
   spec.files = Dir['rails/init.rb', 'lib/**/*', 'vendor/**/*',
     'bin/*', 'test/**/*', 'extra/**/*', 'Rakefile', 'init.rb',
     '.yardopts'] + readmes
-  spec.homepage = 'http://sass-lang.com/'
   spec.has_rdoc = false
   spec.test_files = Dir['test/**/*_test.rb']
   spec.license = "MIT"
