@@ -1,5 +1,18 @@
 $var2: orange;
 
+.and-importing-other-stuff {
+  .is-important {
+    color: blue;
+  }
+}
+$media_var: 100px;
+$variable: #efefef;
+@media screen and (max-width: $media_var) {
+  .smaller-stuff {
+    width: 45px;
+    background: $variable;
+  }
+}
 .dynamic {
   .included {
     @if ($var2 == "orange") {

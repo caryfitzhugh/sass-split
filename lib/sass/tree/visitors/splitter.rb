@@ -22,6 +22,18 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
     raise e
   end
 
+  def visit_media(node)
+    output = ::Sass::Tree::Visitors::Perform.visit(node, @environment)
+
+    # Now all of the tree is resolved... not what we want.
+    # We only want the top level media rule resolved.
+    # So only resolve queries
+    res = resolve_child_tree(output, [:resolved_query])
+    children = node.children.map {|c| visit(c) }
+    res.children = children
+    res
+  end
+
   def visit_comment(node)
     # We don't want no comments here!
     []
@@ -63,7 +75,8 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
 
   def visit_import(node)
     result = super(node)
-    visit( result.imported_file.to_tree )
+    input = visit( result.imported_file.to_tree )
+    input
   end
 
   def visit_mixin(node)
@@ -102,32 +115,13 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
 
     elsif (@output == :static)
       if unbound_variables.size == 0
-        # Copy out with everything resolved to the incoming variables
-        # Create mapping between the two
-        this_env = ::Sass::Environment.new(@environment)
-
-        # Add in a mapping..
-        # # Add in a mapping..
-        output = ::Sass::Tree::Visitors::Perform.visit(node, this_env)
+        output = ::Sass::Tree::Visitors::Perform.visit(node, @environment)
 
         # What that does is do the standard resolution between the variables and the mixin, etc.
         # We want to 'export' back to scss the value as the resolved value
         # So we need to copy the 'resolved' values to the 'values'.
 
-        # For all the children, replace the value with resolved_value
-        children = expand_all_children_etc(output.children).map do |child|
-          pp child, child.class
-            if child.respond_to?(:resolved_name)
-              child.name = [child.resolved_name]
-            end
-
-            if child.respond_to?(:resolved_value)
-              child.value= ::Sass::Script::String.new(child.resolved_value)
-            end
-            child
-          end.flatten
-
-        children
+        output = resolve_child_tree(output)
       else
         []
       end
@@ -206,17 +200,20 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
   end
 
   def expand_all_children_etc(child)
-    children = if child.respond_to?(:children)
+    children = [child].flatten
+    next_children = children.map do |child|
+      if child.respond_to?(:children)
         child.children
       elsif child.respond_to?(:tree)
         child.tree
       else
-        [child]
+        child
       end
-
-    children.flatten.map do |child_child|
-      expand_all_children_etc(child_child)
     end.flatten
+
+    (children + next_children.map do |child_child|
+      expand_all_children_etc(child_child)
+    end).flatten
   end
 
   def map_mixin_args(callable, args, keywords, splat)
@@ -298,5 +295,24 @@ class Sass::Tree::Visitors::Splitter < Sass::Tree::Visitors::Perform
     elsif e
       raise e
     end
+  end
+
+  def resolve_child_tree(output, what_to_resolve = [:resolved_query, :resolved_name, :resolved_value])
+    # For all the children, replace the value with resolved_value
+    children = expand_all_children_etc(output).map do |child|
+        if child.respond_to?(:resolved_query) && what_to_resolve.include?(:resolved_query)
+          child.query = child.resolved_query.to_a
+        end
+
+        if child.respond_to?(:resolved_name) && what_to_resolve.include?(:resolved_name)
+          child.name = [child.resolved_name]
+        end
+
+        if child.respond_to?(:resolved_value) && what_to_resolve.include?(:resolved_value)
+          child.value= ::Sass::Script::String.new(child.resolved_value)
+        end
+        child
+      end.flatten
+    output
   end
 end
